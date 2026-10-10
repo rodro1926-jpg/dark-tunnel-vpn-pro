@@ -1,7 +1,7 @@
 # 🛡️ Dark Tunnel VPN Pro
 
-[![Android Build & APK Release](https://github.com/USERNAME/REPOSITORY/actions/workflows/android-build-release.yml/badge.svg)](https://github.com/USERNAME/REPOSITORY/actions/workflows/android-build-release.yml)
-[![Latest Release](https://img.shields.io/github/v/release/USERNAME/REPOSITORY?color=00FF87&label=Release)](https://github.com/USERNAME/REPOSITORY/releases/latest)
+[![Android Build & APK Release](https://github.com/rodro1926-jpg/dark-tunnel-vpn-pro/actions/workflows/android-build-release.yml/badge.svg)](https://github.com/rodro1926-jpg/dark-tunnel-vpn-pro/actions/workflows/android-build-release.yml)
+[![Latest Release](https://img.shields.io/github/v/release/rodro1926-jpg/dark-tunnel-vpn-pro?color=00FF87&label=Release)](https://github.com/rodro1926-jpg/dark-tunnel-vpn-pro/releases/latest)
 [![API](https://img.shields.io/badge/API-24%2B%20%28Android%207.0%2B%29-00D2FF)](https://developer.android.com/about/dashboards)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
@@ -13,7 +13,7 @@
 
 | File | Target Android | Architecture | Download Link |
 | :--- | :--- | :--- | :--- |
-| **DarkTunnelVPN-Pro-v1.0.0.apk** | Android 7.0+ (API 24–36) | Universal (`arm64-v8a`, `armeabi-v7a`, `x86_64`) | [**⬇️ Download Latest Release**](https://github.com/USERNAME/REPOSITORY/releases/latest) |
+| **DarkTunnelVPN-Pro-v1.0.0.apk** | Android 7.0+ (API 24–36) | Universal (`arm64-v8a`, `armeabi-v7a`, `x86_64`) | [**⬇️ Download Latest Release**](https://github.com/rodro1926-jpg/dark-tunnel-vpn-pro/releases/latest) |
 
 > 💡 *Replace `USERNAME` and `REPOSITORY` with your actual GitHub username and repo slug.*
 
@@ -133,7 +133,7 @@ badvpn-udpgw --listen-addr 127.0.0.1:7300 --max-clients 500 &
 ### Build Commands
 ```bash
 # Clone the repository
-git clone https://github.com/USERNAME/REPOSITORY.git
+git clone https://github.com/rodro1926-jpg/dark-tunnel-vpn-pro.git
 cd REPOSITORY
 
 # Run unit and Robolectric tests
@@ -170,7 +170,7 @@ git add .
 git commit -m "Initial commit: Dark Tunnel VPN Pro v1.0.0"
 
 # 2. Add your GitHub remote repository
-git remote add origin https://github.com/USERNAME/REPOSITORY.git
+git remote add origin https://github.com/rodro1926-jpg/dark-tunnel-vpn-pro.git
 git branch -M main
 git push -u origin main
 
@@ -178,7 +178,7 @@ git push -u origin main
 git tag -a v1.0.0 -m "Release v1.0.0: Dark Tunnel VPN Pro"
 git push origin v1.0.0
 ```
-> Within 2–3 minutes, GitHub Actions will build the project and publish the release with downloadable APKs at `https://github.com/USERNAME/REPOSITORY/releases/tag/v1.0.0`.
+> Within 2–3 minutes, GitHub Actions will build the project and publish the release with downloadable APKs at `https://github.com/rodro1926-jpg/dark-tunnel-vpn-pro/releases/tag/v1.0.0`.
 
 ---
 
