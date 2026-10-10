@@ -6,6 +6,7 @@ import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest
+import androidx.core.content.ContextCompat
 import com.example.model.NetworkType
 import com.example.model.TunnelStatus
 import com.example.model.VpnConfig
@@ -107,8 +108,18 @@ object VpnManager {
             putExtra(DarkTunnelVpnService.EXTRA_SNI, config.sniServerName.ifBlank { server.sniHost })
             putExtra(DarkTunnelVpnService.EXTRA_DNS_PRIMARY, config.customDnsPrimary)
             putExtra(DarkTunnelVpnService.EXTRA_DNS_SECONDARY, config.customDnsSecondary)
+            putExtra(DarkTunnelVpnService.EXTRA_SERVER_EXIT_IP, server.exitIp)
         }
-        context.startService(intent)
+
+        try {
+            ContextCompat.startForegroundService(context, intent)
+        } catch (_: Exception) {
+            try {
+                context.startService(intent)
+            } catch (e: Exception) {
+                onDisconnected("Could not start VPN service: ${e.message}")
+            }
+        }
     }
 
     fun stopVpn(context: Context) {
@@ -116,7 +127,23 @@ object VpnManager {
         val intent = Intent(context, DarkTunnelVpnService::class.java).apply {
             action = DarkTunnelVpnService.ACTION_DISCONNECT
         }
-        context.startService(intent)
+        try {
+            ContextCompat.startForegroundService(context, intent)
+        } catch (_: Exception) {
+            try {
+                context.startService(intent)
+            } catch (_: Exception) {}
+        }
+    }
+
+    fun clearError() {
+        _vpnState.update {
+            if (it.status == TunnelStatus.ERROR) {
+                it.copy(status = TunnelStatus.DISCONNECTED, errorMessage = null)
+            } else {
+                it.copy(errorMessage = null)
+            }
+        }
     }
 
     fun onConnected(currentIp: String) {
@@ -163,10 +190,13 @@ object VpnManager {
     }
 
     private fun startDurationTimer() {
+        durationJob?.cancel()
         durationJob = scope.launch {
+            var seconds = 0L
             while (true) {
                 delay(1000)
-                _vpnState.update { it.copy(durationSeconds = it.durationSeconds + 1) }
+                seconds++
+                _vpnState.update { it.copy(durationSeconds = seconds) }
             }
         }
     }

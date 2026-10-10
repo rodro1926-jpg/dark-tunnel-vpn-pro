@@ -23,5 +23,6 @@ data class VpnServer(
     val isPremium: Boolean = false,
     val city: String = "",
     val wsPath: String = "/dark-ws",
-    val sniHost: String = ""
+    val sniHost: String = "",
+    val exitIp: String = ""
 )

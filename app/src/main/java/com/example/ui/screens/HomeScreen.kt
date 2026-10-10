@@ -96,6 +96,9 @@ fun HomeScreen(
     }
 
     val handleConnectClick = {
+        if (vpnState.status == TunnelStatus.ERROR) {
+            com.example.vpn.VpnManager.clearError()
+        }
         if (vpnState.status == TunnelStatus.CONNECTED || vpnState.status == TunnelStatus.CONNECTING) {
             onConnectToggle()
         } else {
@@ -251,28 +254,63 @@ fun HomeScreen(
                     .border(1.dp, ErrorRed.copy(alpha = 0.4f), RoundedCornerShape(12.dp))
                     .padding(14.dp)
             ) {
-                Row(verticalAlignment = Alignment.Top) {
-                    Icon(
-                        imageVector = Icons.Default.ErrorOutline,
-                        contentDescription = "Error",
-                        tint = ErrorRed,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Column {
-                        Text(
-                            text = "Connection Warning",
-                            color = ErrorRed,
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Bold
+                Column {
+                    Row(verticalAlignment = Alignment.Top) {
+                        Icon(
+                            imageVector = Icons.Default.ErrorOutline,
+                            contentDescription = "Error",
+                            tint = ErrorRed,
+                            modifier = Modifier.size(20.dp)
                         )
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(
-                            text = vpnState.errorMessage ?: "Unknown error occurred",
-                            color = TextPrimary,
-                            fontSize = 12.sp,
-                            lineHeight = 16.sp
-                        )
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Connection Notice",
+                                color = ErrorRed,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = vpnState.errorMessage ?: "Unknown issue occurred",
+                                color = TextPrimary,
+                                fontSize = 12.sp,
+                                lineHeight = 16.sp
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        Button(
+                            onClick = { com.example.vpn.VpnManager.clearError() },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = DarkSurfaceElevated,
+                                contentColor = TextSecondary
+                            ),
+                            shape = RoundedCornerShape(8.dp),
+                            modifier = Modifier.height(34.dp)
+                        ) {
+                            Text(text = "Dismiss", fontSize = 11.sp)
+                        }
+
+                        Spacer(modifier = Modifier.width(8.dp))
+
+                        Button(
+                            onClick = handleConnectClick,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = NeonGreen,
+                                contentColor = DarkBackground
+                            ),
+                            shape = RoundedCornerShape(8.dp),
+                            modifier = Modifier.height(34.dp)
+                        ) {
+                            Text(text = "Retry Now", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        }
                     }
                 }
             }
