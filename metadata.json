@@ -1,0 +1,6 @@
+{
+  "name": "Dark Tunnel VPN Pro",
+  "description": "A modern, high-performance Android VPN client with dark cyberpunk theme, SSH & WebSocket tunneling, server management, and real VpnService integration.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
