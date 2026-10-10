@@ -2,15 +2,15 @@ package com.example.ui.components
 
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Terminal
 import androidx.compose.material.icons.filled.Tune
-import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Public
 import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.Terminal
 import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
@@ -39,7 +39,7 @@ enum class NavDestination(
     HOME("Home", Icons.Filled.Home, Icons.Outlined.Home, "nav_home"),
     SERVERS("Servers", Icons.Filled.Public, Icons.Outlined.Public, "nav_servers"),
     CONFIGS("Configs", Icons.Filled.Tune, Icons.Outlined.Tune, "nav_configs"),
-    HISTORY("History", Icons.Filled.History, Icons.Outlined.History, "nav_history"),
+    LOGS("Logs", Icons.Filled.Terminal, Icons.Outlined.Terminal, "nav_logs"),
     SETTINGS("Settings", Icons.Filled.Settings, Icons.Outlined.Settings, "nav_settings")
 }
 

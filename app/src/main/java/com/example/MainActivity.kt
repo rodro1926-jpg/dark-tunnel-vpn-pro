@@ -1,7 +1,6 @@
 package com.example
 
 import android.Manifest
-import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -19,15 +18,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.ui.MainViewModel
 import com.example.ui.components.BottomNavBar
 import com.example.ui.components.NavDestination
 import com.example.ui.screens.ConfigManagerScreen
-import com.example.ui.screens.HistoryScreen
 import com.example.ui.screens.HomeScreen
+import com.example.ui.screens.LogScreen
 import com.example.ui.screens.ServerListScreen
 import com.example.ui.screens.SettingsScreen
 import com.example.ui.theme.DarkBackground
@@ -56,7 +54,6 @@ fun DarkTunnelApp(
     val selectedServer by viewModel.selectedServer.collectAsStateWithLifecycle()
     val configs by viewModel.configs.collectAsStateWithLifecycle()
     val activeConfig by viewModel.activeConfig.collectAsStateWithLifecycle()
-    val history by viewModel.history.collectAsStateWithLifecycle()
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val isPinging by viewModel.isPinging.collectAsStateWithLifecycle()
 
@@ -108,7 +105,9 @@ fun DarkTunnelApp(
                         selectedServer = selectedServer,
                         isPinging = isPinging,
                         onSelectServer = { viewModel.selectServer(it) },
-                        onRefreshPings = { viewModel.refreshPings() }
+                        onRefreshPings = { viewModel.refreshPings() },
+                        onAddServer = { viewModel.saveServer(it) },
+                        onDeleteServer = { viewModel.deleteServer(it) }
                     )
                 }
                 NavDestination.CONFIGS -> {
@@ -123,11 +122,8 @@ fun DarkTunnelApp(
                         onExportJson = { cfg -> viewModel.exportConfig(cfg) }
                     )
                 }
-                NavDestination.HISTORY -> {
-                    HistoryScreen(
-                        history = history,
-                        onClearHistory = { viewModel.clearHistory() }
-                    )
+                NavDestination.LOGS -> {
+                    LogScreen()
                 }
                 NavDestination.SETTINGS -> {
                     SettingsScreen(

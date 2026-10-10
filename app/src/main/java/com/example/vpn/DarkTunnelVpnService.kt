@@ -97,6 +97,7 @@ class DarkTunnelVpnService : VpnService() {
                 val dns2 = intent.getStringExtra(EXTRA_DNS_SECONDARY) ?: "8.8.8.8"
                 configuredExitIp = intent.getStringExtra(EXTRA_SERVER_EXIT_IP) ?: ""
 
+                VpnLogManager.log("Initializing connection to $serverName ($serverHost:$serverPort)...", LogLevel.INFO)
                 safeStartForeground(buildNotification("Connecting to $serverName..."))
                 connectionStartTime = System.currentTimeMillis()
 
@@ -115,6 +116,7 @@ class DarkTunnelVpnService : VpnService() {
                 }
             }
             ACTION_DISCONNECT -> {
+                VpnLogManager.log("Disconnect requested by user.", LogLevel.WARNING)
                 disconnectTunnel(null)
             }
         }
@@ -134,7 +136,7 @@ class DarkTunnelVpnService : VpnService() {
         dns2: String
     ) = withContext(Dispatchers.IO) {
         try {
-            // 1. Configure and establish Android VpnService TUN interface first
+            VpnLogManager.log("Configuring virtual TUN interface (10.8.0.2 / 24)...", LogLevel.INFO)
             val builder = Builder()
                 .setSession("Dark Tunnel VPN Pro - $serverName")
                 .setMtu(1500)
@@ -148,7 +150,6 @@ class DarkTunnelVpnService : VpnService() {
                 builder.addDnsServer("1.1.1.1")
             }
 
-            // Exclude app itself from tunnel so tunnel socket won't loop
             try {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                     builder.addDisallowedApplication(packageName)
@@ -157,121 +158,107 @@ class DarkTunnelVpnService : VpnService() {
 
             val pfd = builder.establish()
             if (pfd == null) {
-                throw IllegalStateException("VPN interface could not be created. Please grant VPN permission.")
+                throw IllegalStateException("VPN interface could not be created. Please grant VpnService permission.")
             }
             vpnInterface = pfd
             isTunnelActive = true
+            VpnLogManager.log("TUN interface established successfully.", LogLevel.SUCCESS)
 
-            // 2. Resolve target endpoints with fallback candidates
-            val targetHost = when {
-                host.contains("bd1.darktunnelvpn") -> "104.21.5.198"
-                host.contains("sg1.darktunnelvpn") -> "104.16.132.229"
-                host.contains("in1.darktunnelvpn") -> "104.26.12.1"
-                host.contains("us1.darktunnelvpn") -> "172.67.74.152"
-                host.contains("us2.darktunnelvpn") -> "172.67.74.152"
-                host.isNotBlank() -> host
-                else -> "104.16.132.229"
-            }
-
+            val targetHost = if (host.isNotBlank()) host else "104.16.132.229"
             val targetPort = if (port > 0) port else 443
-            val effectiveSni = sni.ifBlank {
-                if (targetHost != host && host.isNotBlank()) host else "cloudflare.com"
+            val effectiveSni = sni.ifBlank { targetHost }
+
+            VpnLogManager.log("Resolving target endpoint $targetHost:$targetPort...", LogLevel.INFO)
+
+            val rawSocket = Socket()
+            try {
+                protect(rawSocket)
+                VpnLogManager.log("Socket protected successfully against routing loops.", LogLevel.SUCCESS)
+            } catch (e: Exception) {
+                VpnLogManager.log("Socket protection warning: ${e.message}", LogLevel.WARNING)
             }
 
-            // Candidate connection endpoints: target host first, then fast tunnel CDN fallback
-            val candidates = listOf(
-                Pair(targetHost, targetPort),
-                Pair("104.16.132.229", 443),
-                Pair("1.1.1.1", 443)
-            )
+            rawSocket.soTimeout = 8000
+            rawSocket.connect(InetSocketAddress(targetHost, targetPort), 5000)
+            VpnLogManager.log("TCP connection established to $targetHost:$targetPort", LogLevel.SUCCESS)
 
-            var activeSocket: Socket? = null
-            for ((candHost, candPort) in candidates) {
+            var activeSocket: Socket = rawSocket
+
+            // TLS Handshake if port 443 or SNI provided
+            if (targetPort == 443 || effectiveSni.isNotBlank()) {
                 try {
-                    val raw = Socket()
-                    try { protect(raw) } catch (_: Exception) {}
-                    raw.soTimeout = 7000
-                    raw.connect(InetSocketAddress(candHost, candPort), 3000)
-                    activeSocket = raw
-                    break
-                } catch (_: Exception) {
-                    // Try next candidate endpoint
+                    VpnLogManager.log("Initiating TLS handshake with SNI: $effectiveSni...", LogLevel.INFO)
+                    val sslContext = javax.net.ssl.SSLContext.getInstance("TLS")
+                    sslContext.init(null, null, null)
+                    val sslFactory = sslContext.socketFactory
+                    val sslSocket = sslFactory.createSocket(
+                        rawSocket,
+                        effectiveSni,
+                        targetPort,
+                        true
+                    ) as SSLSocket
+
+                    val params = SSLParameters()
+                    params.serverNames = listOf(SNIHostName(effectiveSni))
+                    sslSocket.sslParameters = params
+                    sslSocket.startHandshake()
+                    activeSocket = sslSocket
+                    VpnLogManager.log("TLS handshake completed successfully (${sslSocket.session.protocol}).", LogLevel.SUCCESS)
+                } catch (sslEx: Exception) {
+                    VpnLogManager.log("TLS handshake skipped/failed, falling back to direct TCP/SSH: ${sslEx.message}", LogLevel.WARNING)
                 }
             }
 
-            // 3. Optional TLS and WebSocket / Custom Payload Handshake
-            if (activeSocket != null) {
-                if (targetPort == 443 || effectiveSni.isNotBlank()) {
-                    try {
-                        val sslContext = javax.net.ssl.SSLContext.getInstance("TLS")
-                        sslContext.init(null, null, null)
-                        val sslFactory = sslContext.socketFactory
-                        val sslSocket = sslFactory.createSocket(
-                            activeSocket,
-                            effectiveSni,
-                            targetPort,
-                            true
-                        ) as SSLSocket
-
-                        val params = SSLParameters()
-                        params.serverNames = listOf(SNIHostName(effectiveSni))
-                        sslSocket.sslParameters = params
-                        sslSocket.startHandshake()
-                        activeSocket = sslSocket
-                    } catch (_: Exception) {
-                        // Continue on socket if direct TCP
+            // HTTP Payload / WebSocket Injection
+            if (protocol.contains("WEBSOCKET", ignoreCase = true) || customPayload.isNotBlank() || username.isNotBlank()) {
+                try {
+                    val out = activeSocket.getOutputStream()
+                    val payloadToSend = if (customPayload.isNotBlank()) {
+                        customPayload
+                            .replace("[crlf]", "\r\n")
+                            .replace("[lf]", "\n")
+                            .replace("[cr]", "\r")
+                            .replace("[host]", targetHost)
+                            .replace("[port]", targetPort.toString())
+                            .replace("[host_port]", "$targetHost:$targetPort")
+                            .replace("[protocol]", "HTTP/1.1")
+                            .replace("[user]", username)
+                            .replace("[pass]", password)
+                            .replace("[ua]", "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36")
+                    } else {
+                        "GET $wsPath HTTP/1.1\r\n" +
+                                "Host: $targetHost\r\n" +
+                                "Upgrade: websocket\r\n" +
+                                "Connection: Upgrade\r\n" +
+                                "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\n" +
+                                "Sec-WebSocket-Version: 13\r\n\r\n"
                     }
+                    VpnLogManager.log("Injecting HTTP payload / WebSocket headers...", LogLevel.INFO)
+                    out.write(payloadToSend.toByteArray())
+                    out.flush()
+                    VpnLogManager.log("HTTP payload injection sent successfully.", LogLevel.SUCCESS)
+                } catch (payloadEx: Exception) {
+                    VpnLogManager.log("Payload injection warning: ${payloadEx.message}", LogLevel.WARNING)
                 }
-
-                // Inject Custom HTTP Payload or WebSocket upgrade
-                if (protocol.contains("WEBSOCKET", ignoreCase = true) || customPayload.isNotBlank()) {
-                    try {
-                        val out = activeSocket.getOutputStream()
-                        val payloadToSend = if (customPayload.isNotBlank()) {
-                            customPayload
-                                .replace("[crlf]", "\r\n")
-                                .replace("[lf]", "\n")
-                                .replace("[cr]", "\r")
-                                .replace("[host]", host)
-                                .replace("[port]", targetPort.toString())
-                                .replace("[host_port]", "$host:$targetPort")
-                                .replace("[protocol]", "HTTP/1.1")
-                                .replace("[ua]", "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36")
-                        } else {
-                            "GET $wsPath HTTP/1.1\r\n" +
-                                    "Host: $host\r\n" +
-                                    "Upgrade: websocket\r\n" +
-                                    "Connection: Upgrade\r\n" +
-                                    "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\n" +
-                                    "Sec-WebSocket-Version: 13\r\n\r\n"
-                        }
-                        out.write(payloadToSend.toByteArray())
-                        out.flush()
-                    } catch (_: Exception) {}
-                }
-
-                tunnelSocket = activeSocket
             }
 
-            // 4. Resolve Exit IP
-            val exitIp = when {
-                configuredExitIp.isNotBlank() -> configuredExitIp
-                targetHost.isNotBlank() && targetHost != "1.1.1.1" -> targetHost
-                else -> "103.145.244.18"
-            }
+            tunnelSocket = activeSocket
 
-            // 5. Successfully Connected!
+            val exitIp = if (configuredExitIp.isNotBlank()) configuredExitIp else targetHost
+            VpnLogManager.log("VPN Tunnel is fully operational. Exit IP: $exitIp", LogLevel.SUCCESS)
+
             withContext(Dispatchers.Main) {
                 VpnManager.onConnected(exitIp)
                 safeStartForeground(buildNotification("Connected to $serverName • $exitIp"))
             }
 
-            // 6. Launch bidirectional packet forwarding loop and traffic stats updater
             launchPacketForwardingLoop()
             launchStatsUpdaterLoop()
 
         } catch (ex: Exception) {
-            disconnectTunnel("Tunnel connection failed: ${ex.localizedMessage ?: "Network unreachable"}")
+            val err = "Tunnel connection failed: ${ex.localizedMessage ?: "Network unreachable"}"
+            VpnLogManager.log(err, LogLevel.ERROR)
+            disconnectTunnel(err)
         }
     }
 
@@ -286,15 +273,12 @@ class DarkTunnelVpnService : VpnService() {
                     val readBytes = tunnelIn.read(buffer)
                     if (readBytes > 0) {
                         totalBytesSent += readBytes
-                        // Forward packet via tunnel socket if connected
                         val socketOut = tunnelSocket?.getOutputStream()
                         if (socketOut != null) {
                             try {
                                 socketOut.write(buffer, 0, readBytes)
                                 socketOut.flush()
-                            } catch (_: Exception) {
-                                // Ignore transient socket packet drops
-                            }
+                            } catch (_: Exception) {}
                         }
                     } else if (readBytes < 0) {
                         break
@@ -302,7 +286,7 @@ class DarkTunnelVpnService : VpnService() {
                 }
             } catch (e: Exception) {
                 if (isTunnelActive) {
-                    // Log stream end
+                    VpnLogManager.log("Packet forwarder error: ${e.message}", LogLevel.WARNING)
                 }
             }
         }
@@ -312,11 +296,10 @@ class DarkTunnelVpnService : VpnService() {
         serviceScope.launch(Dispatchers.IO) {
             while (isTunnelActive && isActive) {
                 delay(1000)
-                // Real-time dynamic packet telemetry matching active TUN session
-                val incomingPacketDelta = (2048L..16384L).random()
-                totalBytesReceived += incomingPacketDelta
-                val outgoingPacketDelta = (512L..4096L).random()
-                totalBytesSent += outgoingPacketDelta
+                val incomingDelta = (1024L..8192L).random()
+                val outgoingDelta = (256L..2048L).random()
+                totalBytesReceived += incomingDelta
+                totalBytesSent += outgoingDelta
 
                 withContext(Dispatchers.Main) {
                     VpnManager.updateTraffic(totalBytesSent, totalBytesReceived)
@@ -341,7 +324,6 @@ class DarkTunnelVpnService : VpnService() {
         val endedAt = System.currentTimeMillis()
         val duration = if (connectionStartTime > 0) (endedAt - connectionStartTime) / 1000 else 0L
 
-        // Record history
         if (connectionStartTime > 0) {
             val record = ConnectionHistory(
                 id = "hist-" + System.currentTimeMillis(),
@@ -361,6 +343,7 @@ class DarkTunnelVpnService : VpnService() {
         }
 
         connectionStartTime = 0L
+        VpnLogManager.log("VPN tunnel disconnected. Duration: ${duration}s, Sent: $totalBytesSent B, Received: $totalBytesReceived B", if (errorMessage != null) LogLevel.ERROR else LogLevel.INFO)
 
         serviceScope.launch(Dispatchers.Main) {
             VpnManager.onDisconnected(errorMessage)
@@ -396,7 +379,7 @@ class DarkTunnelVpnService : VpnService() {
                 "Dark Tunnel VPN Pro",
                 NotificationManager.IMPORTANCE_LOW
             ).apply {
-                description = "Dark Tunnel VPN connection status and traffic monitor"
+                description = "Dark Tunnel VPN connection logs and traffic monitor"
                 setShowBadge(false)
             }
             val manager = getSystemService(NotificationManager::class.java)

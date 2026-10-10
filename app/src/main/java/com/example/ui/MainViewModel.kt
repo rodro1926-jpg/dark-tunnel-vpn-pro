@@ -16,15 +16,13 @@ import com.example.model.VpnState
 import com.example.ui.components.NavDestination
 import com.example.vpn.VpnManager
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val serverRepo = ServerRepository()
+    private val serverRepo = ServerRepository(application)
     private val configRepo = ConfigRepository(application)
     private val historyRepo = HistoryRepository(application)
     private val settingsRepo = SettingsRepository(application)
@@ -54,6 +52,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun selectServer(server: VpnServer) {
         serverRepo.selectServer(server)
+    }
+
+    fun saveServer(server: VpnServer) {
+        serverRepo.saveServer(server)
+    }
+
+    fun deleteServer(serverId: String) {
+        serverRepo.deleteServer(serverId)
     }
 
     fun refreshPings() {
