@@ -32,6 +32,7 @@ import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Shield
+import androidx.compose.material.icons.filled.Terminal
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -509,6 +510,74 @@ fun HomeScreen(
 
         // Real-time Traffic Statistics Card
         TrafficStatsCard(vpnState = vpnState)
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // Live Connection Logs / Terminal Quick Card
+        CyberCard(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { onNavigate(NavDestination.LOGS) }
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(CircleShape)
+                            .background(DarkSurfaceElevated),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Terminal,
+                            contentDescription = "Logs",
+                            tint = NeonGreen,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column {
+                        Text(
+                            text = "CONNECTION LOGS & TELEMETRY",
+                            color = TextMuted,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 0.5.sp
+                        )
+                        Text(
+                            text = "View live tunnel handshake & debug logs",
+                            color = TextPrimary,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Text(
+                            text = "Monitor TCP, TLS & payload injection status",
+                            color = TextSecondary,
+                            fontSize = 12.sp
+                        )
+                    }
+                }
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "Logs",
+                        color = NeonGreen,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Icon(
+                        imageVector = Icons.Default.ChevronRight,
+                        contentDescription = "Open Logs",
+                        tint = NeonGreen,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
+        }
 
         Spacer(modifier = Modifier.height(24.dp))
     }

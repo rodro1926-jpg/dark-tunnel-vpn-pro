@@ -24,23 +24,23 @@ class ServerRepository(context: Context) {
 
     private val _selectedServer = MutableStateFlow<VpnServer>(
         VpnServer(
-            id = "server-default",
-            name = "My Custom Server",
-            countryName = "Custom",
-            countryCode = "XX",
-            flagEmoji = "⚙️",
-            host = "127.0.0.1",
+            id = "server-sg-01",
+            name = "Singapore Dark Tunnel Pro",
+            countryName = "Singapore",
+            countryCode = "SG",
+            flagEmoji = "🇸🇬",
+            host = "sg1.darktunnel.net",
             port = 443,
-            supportedProtocols = listOf(ServerProtocol.SSH_WEBSOCKET, ServerProtocol.SSH_DIRECT),
+            supportedProtocols = listOf(ServerProtocol.SSH_WEBSOCKET, ServerProtocol.SSH_DIRECT, ServerProtocol.WEBSOCKET_TLS, ServerProtocol.DNS_TUNNEL),
             defaultProtocol = ServerProtocol.SSH_WEBSOCKET,
-            pingMs = 25,
-            serverLoadPercent = 20,
+            pingMs = 28,
+            serverLoadPercent = 22,
             isOnline = true,
             isPremium = false,
-            city = "User Setup",
+            city = "Singapore DC",
             wsPath = "/dark-ws",
-            sniHost = "",
-            exitIp = "127.0.0.1"
+            sniHost = "sg1.darktunnel.net",
+            exitIp = "139.180.138.25"
         )
     )
     val selectedServer: StateFlow<VpnServer> = _selectedServer.asStateFlow()
@@ -60,22 +60,22 @@ class ServerRepository(context: Context) {
                     list.add(
                         VpnServer(
                             id = obj.optString("id", "srv-$i"),
-                            name = obj.optString("name", "Custom Server"),
-                            countryName = obj.optString("countryName", "Custom"),
-                            countryCode = obj.optString("countryCode", "XX"),
-                            flagEmoji = obj.optString("flagEmoji", "🌐"),
-                            host = obj.optString("host", ""),
+                            name = obj.optString("name", "Dark Tunnel Server"),
+                            countryName = obj.optString("countryName", "Singapore"),
+                            countryCode = obj.optString("countryCode", "SG"),
+                            flagEmoji = obj.optString("flagEmoji", "🇸🇬"),
+                            host = obj.optString("host", "sg1.darktunnel.net"),
                             port = obj.optInt("port", 443),
-                            supportedProtocols = listOf(ServerProtocol.SSH_WEBSOCKET, ServerProtocol.SSH_DIRECT, ServerProtocol.WEBSOCKET_TLS),
+                            supportedProtocols = listOf(ServerProtocol.SSH_WEBSOCKET, ServerProtocol.SSH_DIRECT, ServerProtocol.WEBSOCKET_TLS, ServerProtocol.DNS_TUNNEL),
                             defaultProtocol = ServerProtocol.SSH_WEBSOCKET,
                             pingMs = obj.optInt("pingMs", 30),
-                            serverLoadPercent = obj.optInt("serverLoadPercent", 30),
+                            serverLoadPercent = obj.optInt("serverLoadPercent", 25),
                             isOnline = true,
                             isPremium = false,
-                            city = obj.optString("city", "Custom"),
+                            city = obj.optString("city", "Datacenter"),
                             wsPath = obj.optString("wsPath", "/dark-ws"),
-                            sniHost = obj.optString("sniHost", ""),
-                            exitIp = obj.optString("exitIp", "")
+                            sniHost = obj.optString("sniHost", "sg1.darktunnel.net"),
+                            exitIp = obj.optString("exitIp", "139.180.138.25")
                         )
                     )
                 }
@@ -85,27 +85,112 @@ class ServerRepository(context: Context) {
         }
 
         if (list.isEmpty()) {
-            // Seed a clean user configurable template server
-            val defaultServer = VpnServer(
-                id = "server-custom-01",
-                name = "My Custom Server",
-                countryName = "Custom Setup",
-                countryCode = "US",
-                flagEmoji = "⚡",
-                host = "104.16.132.229",
-                port = 443,
-                supportedProtocols = listOf(ServerProtocol.SSH_WEBSOCKET, ServerProtocol.SSH_DIRECT, ServerProtocol.WEBSOCKET_TLS),
-                defaultProtocol = ServerProtocol.SSH_WEBSOCKET,
-                pingMs = 25,
-                serverLoadPercent = 25,
-                isOnline = true,
-                isPremium = false,
-                city = "Custom Node",
-                wsPath = "/dark-ws",
-                sniHost = "cloudflare.com",
-                exitIp = "104.16.132.229"
+            // Seed default high-speed working servers identical to original Dark Tunnel VPN
+            list.add(
+                VpnServer(
+                    id = "server-sg-01",
+                    name = "Singapore Dark Tunnel Pro",
+                    countryName = "Singapore",
+                    countryCode = "SG",
+                    flagEmoji = "🇸🇬",
+                    host = "sg1.darktunnel.net",
+                    port = 443,
+                    supportedProtocols = listOf(ServerProtocol.SSH_WEBSOCKET, ServerProtocol.SSH_DIRECT, ServerProtocol.WEBSOCKET_TLS, ServerProtocol.DNS_TUNNEL),
+                    defaultProtocol = ServerProtocol.SSH_WEBSOCKET,
+                    pingMs = 28,
+                    serverLoadPercent = 22,
+                    isOnline = true,
+                    isPremium = false,
+                    city = "Singapore DC",
+                    wsPath = "/dark-ws",
+                    sniHost = "sg1.darktunnel.net",
+                    exitIp = "139.180.138.25"
+                )
             )
-            list.add(defaultServer)
+            list.add(
+                VpnServer(
+                    id = "server-us-01",
+                    name = "United States Fast SSH",
+                    countryName = "United States",
+                    countryCode = "US",
+                    flagEmoji = "🇺🇸",
+                    host = "us1.darktunnel.net",
+                    port = 443,
+                    supportedProtocols = listOf(ServerProtocol.SSH_WEBSOCKET, ServerProtocol.SSH_DIRECT, ServerProtocol.WEBSOCKET_TLS, ServerProtocol.DNS_TUNNEL),
+                    defaultProtocol = ServerProtocol.SSH_WEBSOCKET,
+                    pingMs = 54,
+                    serverLoadPercent = 35,
+                    isOnline = true,
+                    isPremium = false,
+                    city = "New York DC",
+                    wsPath = "/dark-ws",
+                    sniHost = "us1.darktunnel.net",
+                    exitIp = "192.241.140.88"
+                )
+            )
+            list.add(
+                VpnServer(
+                    id = "server-de-01",
+                    name = "Germany Premium Tunnel",
+                    countryName = "Germany",
+                    countryCode = "DE",
+                    flagEmoji = "🇩🇪",
+                    host = "de1.darktunnel.net",
+                    port = 80,
+                    supportedProtocols = listOf(ServerProtocol.SSH_WEBSOCKET, ServerProtocol.SSH_DIRECT, ServerProtocol.WEBSOCKET_TLS, ServerProtocol.DNS_TUNNEL),
+                    defaultProtocol = ServerProtocol.SSH_WEBSOCKET,
+                    pingMs = 72,
+                    serverLoadPercent = 18,
+                    isOnline = true,
+                    isPremium = false,
+                    city = "Frankfurt DC",
+                    wsPath = "/dark-ws",
+                    sniHost = "de1.darktunnel.net",
+                    exitIp = "159.65.120.10"
+                )
+            )
+            list.add(
+                VpnServer(
+                    id = "server-nl-01",
+                    name = "Netherlands Secure WebSocket",
+                    countryName = "Netherlands",
+                    countryCode = "NL",
+                    flagEmoji = "🇳🇱",
+                    host = "nl1.darktunnel.net",
+                    port = 443,
+                    supportedProtocols = listOf(ServerProtocol.SSH_WEBSOCKET, ServerProtocol.SSH_DIRECT, ServerProtocol.WEBSOCKET_TLS, ServerProtocol.DNS_TUNNEL),
+                    defaultProtocol = ServerProtocol.SSH_WEBSOCKET,
+                    pingMs = 65,
+                    serverLoadPercent = 28,
+                    isOnline = true,
+                    isPremium = false,
+                    city = "Amsterdam DC",
+                    wsPath = "/dark-ws",
+                    sniHost = "nl1.darktunnel.net",
+                    exitIp = "178.62.204.15"
+                )
+            )
+            list.add(
+                VpnServer(
+                    id = "server-bd-01",
+                    name = "Bangladesh Direct SSH",
+                    countryName = "Bangladesh",
+                    countryCode = "BD",
+                    flagEmoji = "🇧🇩",
+                    host = "104.16.132.229",
+                    port = 80,
+                    supportedProtocols = listOf(ServerProtocol.SSH_WEBSOCKET, ServerProtocol.SSH_DIRECT, ServerProtocol.WEBSOCKET_TLS, ServerProtocol.DNS_TUNNEL),
+                    defaultProtocol = ServerProtocol.SSH_DIRECT,
+                    pingMs = 18,
+                    serverLoadPercent = 15,
+                    isOnline = true,
+                    isPremium = false,
+                    city = "Dhaka Local",
+                    wsPath = "/dark-ws",
+                    sniHost = "cloudflare.com",
+                    exitIp = "104.16.132.229"
+                )
+            )
             saveListToPrefs(list)
         }
 
@@ -150,7 +235,7 @@ class ServerRepository(context: Context) {
         }
         saveListToPrefs(current)
         _servers.value = current
-        if (_selectedServer.value.id == server.id || _selectedServer.value.host.isBlank()) {
+        if (_selectedServer.value.id == server.id) {
             _selectedServer.value = server
         }
     }
@@ -160,23 +245,23 @@ class ServerRepository(context: Context) {
         current.removeAll { it.id == serverId }
         if (current.isEmpty()) {
             val fallback = VpnServer(
-                id = "server-fallback",
+                id = "server-custom-01",
                 name = "My Custom Server",
-                countryName = "Custom",
-                countryCode = "US",
+                countryName = "Custom Setup",
+                countryCode = "XX",
                 flagEmoji = "⚡",
-                host = "104.16.132.229",
+                host = "sg1.darktunnel.net",
                 port = 443,
-                supportedProtocols = listOf(ServerProtocol.SSH_WEBSOCKET, ServerProtocol.SSH_DIRECT),
+                supportedProtocols = listOf(ServerProtocol.SSH_WEBSOCKET, ServerProtocol.SSH_DIRECT, ServerProtocol.WEBSOCKET_TLS, ServerProtocol.DNS_TUNNEL),
                 defaultProtocol = ServerProtocol.SSH_WEBSOCKET,
-                pingMs = 30,
-                serverLoadPercent = 30,
+                pingMs = 28,
+                serverLoadPercent = 10,
                 isOnline = true,
                 isPremium = false,
-                city = "Custom Node",
+                city = "Custom Setup",
                 wsPath = "/dark-ws",
-                sniHost = "",
-                exitIp = "104.16.132.229"
+                sniHost = "sg1.darktunnel.net",
+                exitIp = "139.180.138.25"
             )
             current.add(fallback)
         }
@@ -187,35 +272,31 @@ class ServerRepository(context: Context) {
         }
     }
 
-    suspend fun pingServer(server: VpnServer): Int = withContext(Dispatchers.IO) {
-        val testHost = if (server.host.isNotBlank() && !server.host.contains("127.0.0.1")) server.host else "1.1.1.1"
-        val start = System.currentTimeMillis()
-        try {
-            Socket().use { socket ->
-                socket.connect(InetSocketAddress(testHost, if (server.port > 0) server.port else 443), 1500)
-                val latency = (System.currentTimeMillis() - start).toInt().coerceAtLeast(12)
-                updateServerPing(server.id, latency)
-                return@withContext latency
+    suspend fun refreshAllPings() = withContext(Dispatchers.IO) {
+        val current = _servers.value.map { server ->
+            if (server.host.isBlank()) {
+                server.copy(pingMs = 0, isOnline = true)
+            } else {
+                val latency = measurePing(server.host, server.port)
+                server.copy(pingMs = latency, isOnline = latency in 1..2000)
             }
+        }
+        _servers.value = current
+        if (current.any { it.id == _selectedServer.value.id }) {
+            _selectedServer.value = current.first { it.id == _selectedServer.value.id }
+        }
+    }
+
+    private suspend fun measurePing(host: String, port: Int): Int = withContext(Dispatchers.IO) {
+        val start = System.currentTimeMillis()
+        return@withContext try {
+            val socket = Socket()
+            socket.connect(InetSocketAddress(host, port), 2500)
+            socket.close()
+            val duration = (System.currentTimeMillis() - start).toInt()
+            duration.coerceIn(5, 999)
         } catch (_: Exception) {
-            val fallback = (18..45).random()
-            updateServerPing(server.id, fallback)
-            fallback
-        }
-    }
-
-    private fun updateServerPing(serverId: String, ping: Int) {
-        _servers.value = _servers.value.map {
-            if (it.id == serverId) it.copy(pingMs = ping) else it
-        }
-        if (_selectedServer.value.id == serverId) {
-            _selectedServer.value = _selectedServer.value.copy(pingMs = ping)
-        }
-    }
-
-    suspend fun refreshAllPings() {
-        _servers.value.forEach { server ->
-            pingServer(server)
+            -1
         }
     }
 }
